@@ -3,7 +3,10 @@ import hashlib
 import secrets
 import string
 import sys
-import msvcrt
+try:
+    import msvcrt
+except ImportError:
+    msvcrt = None
 from pathlib import Path
 from rich.console import Console
 from rich.table import Table
@@ -38,7 +41,51 @@ def input_password(prompt: str = "  Password        : ") -> str:
             print("*", end="", flush=True)
     return "".join(chars)
 
-VAULT_FILE = Path.home() / ".pm_vault.json"
+VAULT_FILE  = Path.home() / ".pm_vault.json"
+MASTER_FILE = Path.home() / ".pm_master.hash"
+
+
+def set_master_password() -> None:
+    """First-run: ask user to set a master password and save its hash."""
+    console.print("\n  [yellow]No master password found. Set one to protect your vault.[/yellow]")
+    while True:
+        pwd  = input_password("  Set master password    : ").strip()
+        pwd2 = input_password("  Confirm master password: ").strip()
+        if not pwd:
+            print("  Password cannot be empty.")
+        elif pwd != pwd2:
+            print("  Passwords do not match. Try again.")
+        else:
+            MASTER_FILE.write_text(hash_password(pwd))
+            console.print("  [bold green]✓ Master password set.[/bold green]\n")
+            break
+
+
+def verify_master_password() -> bool:
+    """Verify entered master password against stored hash."""
+    stored = MASTER_FILE.read_text().strip()
+    pwd = input_password("  Master password: ").strip()
+    return hash_password(pwd) == stored
+
+
+def unlock_vault() -> bool:
+    """
+    Handle master password on startup.
+    First run: set password. Subsequent runs: verify with 3 attempts.
+    Returns True if unlocked, False if all attempts fail.
+    """
+    if not MASTER_FILE.exists():
+        set_master_password()
+        return True
+    for i in range(3):
+        if verify_master_password():
+            console.print("  [bold green]✓ Vault unlocked.[/bold green]\n")
+            return True
+        remaining = 2 - i
+        if remaining:
+            console.print(f"  [red]Wrong password. {remaining} attempt(s) left.[/red]")
+    console.print("  [bold red]Too many failed attempts. Exiting.[/bold red]\n")
+    return False
 
 UPPER   = string.ascii_uppercase
 LOWER   = string.ascii_lowercase
@@ -304,7 +351,10 @@ def menu_delete():
 # ── main ───────────────────────────────────────────────────────────────────────
 
 def main():
-    console.print("\n[bold cyan]  CiperVault — Password Manager[/bold cyan]\n", justify="center")
+    console.print("\n[bold cyan]🔏 CipherVault — Password Manager [/bold cyan]\n", justify="center")
+
+    if not unlock_vault():
+        sys.exit(1)
 
     while True:
         table = Table(box=box.SQUARE_DOUBLE_HEAD, style="cyan")
@@ -327,7 +377,7 @@ def main():
         elif choice == "gen":  menu_generate()
         elif choice == "ls":   menu_list()
         elif choice == "del":  menu_delete()
-        elif choice == "exit": console.print("\n[bold green]Goodbye! Stay secure. [/bold green]\n", justify="center"); sys.exit(0)
+        elif choice == "exit": console.print("\n[bold green]Goodbye! Stay secure. 🔒[/bold green]", justify="center"); console.print("[cyan]This is my Final Project for CS50P.[/cyan]\n", justify="center"); sys.exit(0)
         else: print("  Invalid choice.")
 
 
