@@ -1,0 +1,9 @@
+master.hash
+vault.json
+.pm_vault.json
+.pm_master.hash
+.idea/
+__pycache__/
+*.pyc
+.venv/
+venv/
