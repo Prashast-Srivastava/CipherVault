@@ -11,6 +11,7 @@ from pathlib import Path
 from rich.console import Console
 from rich.table import Table
 from rich import box
+import cowsay
 
 console = Console()
 
@@ -377,7 +378,7 @@ def main():
         elif choice == "gen":  menu_generate()
         elif choice == "ls":   menu_list()
         elif choice == "del":  menu_delete()
-        elif choice == "exit": console.print("\n[bold green]Goodbye! Stay secure. 🔒[/bold green]", justify="center"); console.print("[cyan]This is my Final Project for CS50P.[/cyan]\n", justify="center"); sys.exit(0)
+        elif choice == "exit": console.print("\n[bold green]Goodbye! Stay secure. 🔒[/bold green]", justify="center");  cowsay.tux("This is my Final Project for CS50P"); sys.exit(0)
         else: print("  Invalid choice.")
 
 
